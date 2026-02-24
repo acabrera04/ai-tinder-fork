@@ -189,7 +189,7 @@ function onCardPointerDown(event) {
 }
 
 function onCardPointerMove(event) {
-  if (!dragState || event.pointerId !== dragState.pointerId) return;
+  if (isAnimating || !dragState || event.pointerId !== dragState.pointerId) return;
 
   dragState.dx = event.clientX - dragState.startX;
   dragState.dy = event.clientY - dragState.startY;
