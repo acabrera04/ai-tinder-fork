@@ -115,10 +115,10 @@ function cycleTopProfilePhoto() {
   const card = getTopCard();
   if (!profile || !card || !profile.photos || profile.photos.length < 2) return false;
 
-  profile.photoIndex = (profile.photoIndex + 1) % profile.photos.length;
   const img = card.querySelector(".card__media");
   if (!img) return false;
 
+  profile.photoIndex = (profile.photoIndex + 1) % profile.photos.length;
   img.src = profile.photos[profile.photoIndex];
   img.alt = `${profile.name} — profile photo ${profile.photoIndex + 1} of ${profile.photos.length}`;
   return true;
