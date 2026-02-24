@@ -91,6 +91,7 @@ let profiles = [];
 let isAnimating = false;
 let dragState = null;
 let lastTapAt = 0;
+let actionTimeoutId = null;
 
 const SWIPE_X_THRESHOLD = 110;
 const SWIPE_UP_THRESHOLD = -120;
@@ -157,9 +158,10 @@ function applyAction(action) {
   card.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
   card.style.opacity = "0";
 
-  window.setTimeout(() => {
+  actionTimeoutId = window.setTimeout(() => {
     profiles.shift();
     isAnimating = false;
+    actionTimeoutId = null;
     renderDeck();
   }, 260);
 
@@ -314,6 +316,10 @@ function renderDeck() {
 }
 
 function resetDeck() {
+  if (actionTimeoutId !== null) {
+    window.clearTimeout(actionTimeoutId);
+    actionTimeoutId = null;
+  }
   isAnimating = false;
   dragState = null;
   lastTapAt = 0;
