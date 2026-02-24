@@ -189,6 +189,10 @@ body {
 .ctrl--nope { background: var(--nope); }
 .ctrl--like { background: var(--like); }
 .ctrl--superlike { background: var(--super); }
+.ctrl:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 .note {
   color: var(--muted);
