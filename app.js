@@ -213,6 +213,8 @@ function onCardPointerEnd(event) {
     card.releasePointerCapture(event.pointerId);
   }
 
+  if (isAnimating) return;
+
   if (dy < SWIPE_UP_THRESHOLD && Math.abs(dx) < SWIPE_X_THRESHOLD) {
     applyAction("superlike");
     return;
