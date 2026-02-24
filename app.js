@@ -91,6 +91,7 @@ let profiles = [];
 let isAnimating = false;
 let dragState = null;
 let lastTapAt = 0;
+let lastTouchCycleAt = -Infinity;
 let actionTimeoutId = null;
 
 const SWIPE_X_THRESHOLD = 110;
@@ -234,6 +235,7 @@ function onCardPointerEnd(event) {
   if (isTap && dragState === null && event.pointerType === "touch") {
     if (event.timeStamp - lastTapAt < 320) {
       lastTapAt = 0;
+      lastTouchCycleAt = event.timeStamp;
       cycleTopProfilePhoto();
       resetDraggedCard(card);
       return;
@@ -261,7 +263,11 @@ function bindTopCardHandlers() {
   topCard.addEventListener("pointermove", onCardPointerMove);
   topCard.addEventListener("pointerup", onCardPointerEnd);
   topCard.addEventListener("pointercancel", onCardPointerCancel);
-  topCard.addEventListener("dblclick", cycleTopProfilePhoto);
+  topCard.addEventListener("dblclick", (e) => {
+    // Skip if a touch double-tap already cycled the photo (prevents double-advance)
+    if (e.timeStamp - lastTouchCycleAt < 500) return;
+    cycleTopProfilePhoto();
+  });
 }
 
 function renderDeck() {
