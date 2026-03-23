@@ -3,6 +3,7 @@ const userRepository = require('../repositories/userRepository');
 const swipeRepository = require('../repositories/swipeRepository');
 const matchRepository = require('../repositories/matchRepository');
 const quotaService = require('./quotaService');
+const pushService = require('./pushService');
 
 const VALID_ACTIONS = ['like', 'nope', 'superlike'];
 
@@ -22,8 +23,11 @@ async function recordSwipe({ swiperId, targetId, action }) {
     throw makeError('FORBIDDEN', 'Cannot swipe on yourself', 403);
   }
 
-  // --- Validate target user exists ---
-  const targetUser = await userRepository.findById(targetId);
+  // --- Validate target user exists (fetch swiper in parallel for notification display names) ---
+  const [targetUser, swiper] = await Promise.all([
+    userRepository.findById(targetId),
+    userRepository.findById(swiperId),
+  ]);
   if (!targetUser) {
     throw makeError('USER_NOT_FOUND', 'Target user not found', 404);
   }
@@ -66,6 +70,14 @@ async function recordSwipe({ swiperId, targetId, action }) {
     }
 
     await client.query('COMMIT');
+
+    // Fire match push notifications after commit (non-blocking, best-effort)
+    if (matched) {
+      const swiperName = swiper?.display_name || 'Someone';
+      const targetName = targetUser.display_name || 'Someone';
+      pushService.sendMatchNotification({ userId: targetId, matchedWithName: swiperName }).catch(console.error);
+      pushService.sendMatchNotification({ userId: swiperId, matchedWithName: targetName }).catch(console.error);
+    }
 
     // Compute remaining quota for superlike responses
     const quotaRemaining = action === 'superlike'

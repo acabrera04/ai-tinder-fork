@@ -11,6 +11,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/swipes', require('./routes/swipes'));
+app.use('/api/push', require('./routes/push'));
 
 // Global error handler
 app.use((err, _req, res, _next) => {

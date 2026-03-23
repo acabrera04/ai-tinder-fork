@@ -374,3 +374,81 @@ document.addEventListener("keydown", onKeydown);
 
 // Boot
 resetDeck();
+
+// -------------------
+// Push Notifications
+// -------------------
+const BACKEND_URL = 'http://localhost:3001';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
+async function initPushNotifications() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    console.info('Push notifications not supported in this browser.');
+    return;
+  }
+
+  let registration;
+  try {
+    registration = await navigator.serviceWorker.register('/sw.js');
+  } catch (err) {
+    console.warn('Service worker registration failed:', err);
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    console.info('Push notification permission denied.');
+    return;
+  }
+
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    console.info('No auth token — skipping push subscription.');
+    return;
+  }
+
+  let vapidPublicKey;
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/push/vapid-key`);
+    if (!resp.ok) {
+      console.info('Push not configured on server.');
+      return;
+    }
+    ({ publicKey: vapidPublicKey } = await resp.json());
+  } catch (err) {
+    console.warn('Could not fetch VAPID key:', err);
+    return;
+  }
+
+  let subscription;
+  try {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    });
+  } catch (err) {
+    console.warn('Push subscription failed:', err);
+    return;
+  }
+
+  try {
+    await fetch(`${BACKEND_URL}/api/push/subscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ subscription }),
+    });
+  } catch (err) {
+    console.warn('Could not save push subscription:', err);
+  }
+}
+
+initPushNotifications();
